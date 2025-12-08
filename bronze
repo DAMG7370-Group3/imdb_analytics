@@ -1,0 +1,183 @@
+# IMDb BRONZE LAYER - DELTA LIVE TABLES
+# ============================================================
+
+import dlt
+from pyspark.sql.functions import *
+spark.sql("USE SCHEMA bronze")
+
+SOURCE_PATH = "/Volumes/imdb_data/bronze/raw/imdb_raw/"
+CHECKPOINT_PATH = "/Volumes/imdb_data/bronze/raw/checkpoints/"
+
+@dlt.table(
+    name="bronze_name_basics",
+    comment="Raw name/person data from IMDb",
+    table_properties={      "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+
+)
+@dlt.expect("valid_nconst", "nconst IS NOT NULL AND nconst LIKE 'nm%'")
+def bronze_name_basics():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}name_basics/")
+        .option("cloudFiles.schemaHints", "nconst STRING, primaryName STRING, birthYear STRING, deathYear STRING, primaryProfession STRING, knownForTitles STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .option("multiLine", "true")
+        .load(f"{SOURCE_PATH}name_basics/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_basics",
+    comment="Raw title data from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_tconst", "tconst IS NOT NULL AND tconst LIKE 'tt%'")
+def bronze_title_basics():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_basics/")
+        .option("cloudFiles.schemaHints", "tconst STRING, titleType STRING, primaryTitle STRING, originalTitle STRING, isAdult STRING, startYear STRING, endYear STRING, runtimeMinutes STRING, genres STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .option("multiLine", "true")
+        .load(f"{SOURCE_PATH}title_basics/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_ratings",
+    comment="Raw ratings data from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_tconst", "tconst IS NOT NULL AND tconst LIKE 'tt%'")
+def bronze_title_ratings():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_ratings/")
+        .option("cloudFiles.schemaHints", "tconst STRING, averageRating STRING, numVotes STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .load(f"{SOURCE_PATH}title_ratings/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_episode",
+    comment="Raw episode data from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_tconst", "tconst IS NOT NULL AND tconst LIKE 'tt%'")
+def bronze_title_episode():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_episode/")
+        .option("cloudFiles.schemaHints", "tconst STRING, parentTconst STRING, seasonNumber STRING, episodeNumber STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .load(f"{SOURCE_PATH}title_episode/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_akas",
+    comment="Raw alternative titles from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_titleid", "titleId IS NOT NULL AND titleId LIKE 'tt%'")
+def bronze_title_akas():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_akas/")
+        .option("cloudFiles.schemaHints", "titleId STRING, ordering STRING, title STRING, region STRING, language STRING, types STRING, attributes STRING, isOriginalTitle STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .option("multiLine", "true")
+        .load(f"{SOURCE_PATH}title_akas/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_principals",
+    comment="Raw cast/crew data from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_tconst", "tconst IS NOT NULL AND tconst LIKE 'tt%'")
+@dlt.expect("valid_nconst", "nconst IS NOT NULL AND nconst LIKE 'nm%'")
+def bronze_title_principals():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_principals/")
+        .option("cloudFiles.schemaHints", "tconst STRING, ordering STRING, nconst STRING, category STRING, job STRING, characters STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .option("multiLine", "true")
+        .load(f"{SOURCE_PATH}title_principals/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
+
+@dlt.table(
+    name="bronze_title_crew",
+    comment="Raw crew (directors/writers) from IMDb",
+    table_properties={   "quality": "bronze" ,"delta.enableChangeDataFeed": "true" }
+)
+@dlt.expect("valid_tconst", "tconst IS NOT NULL AND tconst LIKE 'tt%'")
+def bronze_title_crew():
+    return (
+        spark.readStream
+        .format("cloudFiles")
+        .option("cloudFiles.format", "csv")
+        .option("cloudFiles.schemaEvolutionMode", "addNewColumns")
+        .option("cloudFiles.schemaLocation", f"{CHECKPOINT_PATH}title_crew/")
+        .option("cloudFiles.schemaHints", "tconst STRING, directors STRING, writers STRING")
+        .option("header", "true")
+        .option("delimiter", "\t")
+        .option("nullValue", "\\N")
+        .option("quote", "")
+        .option("escape", "")
+        .load(f"{SOURCE_PATH}title_crew/")
+        .withColumn("_source_file", col("_metadata.file_path"))
+        .withColumn("_loaded_at", current_timestamp())
+    )
